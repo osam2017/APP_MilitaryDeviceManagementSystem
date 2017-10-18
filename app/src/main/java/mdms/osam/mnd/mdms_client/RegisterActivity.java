@@ -3,8 +3,10 @@ package mdms.osam.mnd.mdms_client;
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -48,20 +50,33 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
     ArrayAdapter<CharSequence> unitSpinnerAdapter;
     ArrayAdapter<String> autoCompleteAdapter;
 
-    HttpProxy hProxy;
     UserDeviceInfo udi;
 
-    boolean isRequestSuccess;
+    SharedPreferences mPref;
+
+    private final String REG_PREF_KEY = "isRegistered";
 
     private static AsyncHttpClient client = new AsyncHttpClient();
-
-    private final int REQUEST_READ_PHONE_STATE = 4;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_register);
-        setView();
+
+        mPref = PreferenceManager.getDefaultSharedPreferences(this);
+
+        //check isRegistered
+        boolean isRegisteredExist = mPref.contains(REG_PREF_KEY);
+
+        if(isRegisteredExist){
+            if(mPref.getBoolean(REG_PREF_KEY, false)){
+                Intent i = new Intent(this, MainActivity.class);
+                startActivity(i);
+            }
+        }else{
+            setContentView(R.layout.activity_register);
+            setView();
+
+        }
 
     }
 
@@ -130,12 +145,6 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 
                 if (udi != null) {
                     sendInfo(udi);
-                    if (isRequestSuccess) {
-                        startActivity(i);
-                    } else {
-                        Toast.makeText(this, "네트워크 문제로 등록에 실패하였습니다.", Toast.LENGTH_SHORT).show();
-                        break;
-                    }
                 } else {
                     Toast.makeText(this, "일시적 오류입니다. 잠시 후 다시 시도해 주십시오.", Toast.LENGTH_SHORT).show();
                 }
@@ -143,23 +152,6 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
     }
 
     private void sendInfo(UserDeviceInfo udi) {
-       /* hProxy = new HttpProxy("https://osam2017-server-kelvin37.c9users.io/registerUser");
-        new Thread(new Runnable() {
-            public void run() {
-                String[] result = hProxy.postData(udi);
-                //responseCode = Integer.valueOf(result[0]);
-                Log.i("result", result[1]);
-                int resposnseCode = Integer.valueOf(result[0]);
-
-                if (200 <= resposnseCode && resposnseCode < 300) {
-                    isRequestSuccess = true;
-                } else {
-                    isRequestSuccess = false;
-                }
-            }
-        }).start();
-
-        return hProxy.getResponseStatus();*/
         try {
 
             RequestParams params = new RequestParams();
@@ -168,7 +160,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
             StringEntity entity;
 
             jsonEntity = om.writeValueAsString(udi);
-            Log.i("jsonEntity",jsonEntity);
+            Log.i("jsonEntity", jsonEntity);
             entity = new StringEntity(jsonEntity);
             entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
 
@@ -176,18 +168,27 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                 @Override
                 public void onSuccess(int statusCode, Header[] headers, byte[] bytes) {
                     String jsonData = new String(bytes);
-                    Log.i("Test", "jsondata: " + jsonData);
+                    Log.i("Test", "responseData: " + jsonData);
+                    Log.i("statusCode", String.valueOf(statusCode));
 
-                    if (200 <= statusCode && statusCode < 300) {
-                        isRequestSuccess = true;
+                    if (statusCode == 201) {
+                        SharedPreferences.Editor editor = mPref.edit();
+                        editor.putBoolean(REG_PREF_KEY,true);
+                        editor.commit();
+                        Toast.makeText(RegisterActivity.this, "등록에 성공하였습니다.", Toast.LENGTH_SHORT).show();
+
+                        Intent i = new Intent(RegisterActivity.this, MainActivity.class);
+                        startActivity(i);
                     } else {
-                        isRequestSuccess = false;
                     }
                 }
 
                 @Override
                 public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-
+                    Toast.makeText(RegisterActivity.this, "네트워크 문제로 등록에 실패하였습니다.", Toast.LENGTH_SHORT).show();
+                    SharedPreferences.Editor editor = mPref.edit();
+                    editor.putBoolean(REG_PREF_KEY,false);
+                    editor.commit();
                 }
             });
         } catch (IOException e) {

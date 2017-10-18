@@ -1,6 +1,9 @@
 package mdms.osam.mnd.mdms_client;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -20,16 +23,28 @@ public class MainActivity extends AppCompatActivity {
     private final String URL = "10.53.128.126:3000/log";
     HttpRequestHelper httpHelper;
     TextView isWorkTime;
+    SharedPreferences mPref;
+    private final String REG_PREF_KEY = "isRegistered";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        HashMap<String,String> sendData = new HashMap<>();
-        sendData.put("username","hi");
 
-        //httpHelper = new HttpRequestHelper(URL,sendData);
+        mPref = PreferenceManager.getDefaultSharedPreferences(this);
 
-        //httpHelper.post();
+        //check isRegistered
+        boolean isRegisteredExist = mPref.contains(REG_PREF_KEY);
+
+        if(isRegisteredExist){
+            if(!mPref.getBoolean(REG_PREF_KEY, false)){
+                Intent i = new Intent(this, RegisterActivity.class);
+                startActivity(i);
+            }
+        }else{
+            Intent i = new Intent(this, RegisterActivity.class);
+            startActivity(i);
+        }
 
         isWorkTime = (TextView)findViewById(R.id.tv_isWorkTime);
         if(isNowInWorkTime()){
