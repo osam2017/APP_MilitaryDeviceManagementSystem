@@ -1,0 +1,48 @@
+<resources>
+    <string name="app_name">MDMS_client</string>
+
+    <string-array name="mil_class">
+        <item>육군</item>
+        <item>공군</item>
+        <item>해군</item>
+    </string-array>
+
+    <string-array name="unit_name">
+        <item>육군본부</item>
+        <item>공군본부</item>
+        <item>해군본부</item>
+    </string-array>
+
+    <string-array name="rank">
+        <item>test</item>
+        <item>data</item>
+        <item>이병</item>
+        <item>일병</item>
+        <item>상병</item>
+        <item>병장</item>
+        <item>하사</item>
+        <item>중사</item>
+        <item>상사</item>
+        <item>원사</item>
+        <item>준위</item>
+        <item>소위</item>
+        <item>중위</item>
+        <item>대위</item>
+        <item>소령</item>
+        <item>중령</item>
+        <item>대령</item>
+        <item>준장</item>
+        <item>소장</item>
+        <item>중장</item>
+        <item>대장</item>
+        <item>1급</item>
+        <item>2급</item>
+        <item>3급</item>
+        <item>4급</item>
+        <item>5급</item>
+        <item>6급</item>
+        <item>7급</item>
+        <item>8급</item>
+        <item>9급</item>
+    </string-array>
+</resources>
