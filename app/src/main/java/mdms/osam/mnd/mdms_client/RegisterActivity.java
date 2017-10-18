@@ -20,6 +20,18 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.AsyncHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+
+import cz.msebera.android.httpclient.Header;
+import cz.msebera.android.httpclient.entity.StringEntity;
+import cz.msebera.android.httpclient.message.BasicHeader;
+import cz.msebera.android.httpclient.protocol.HTTP;
 import mdms.osam.mnd.proxy.HttpProxy;
 import mdms.osam.mnd.vo.UserDeviceInfo;
 
@@ -39,6 +51,10 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
     HttpProxy hProxy;
     UserDeviceInfo udi;
 
+    boolean isRequestSuccess;
+
+    private static AsyncHttpClient client = new AsyncHttpClient();
+
     private final int REQUEST_READ_PHONE_STATE = 4;
 
     @Override
@@ -47,20 +63,6 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
         setContentView(R.layout.activity_register);
         setView();
 
-
-    }
-
-    private int sendInfo() {
-        hProxy = new HttpProxy("http://10.53.128.126:3000/topic");
-
-        new Thread(new Runnable() {
-            public void run() {
-                String result = hProxy.postData(udi);
-                Log.i("result", result);
-            }
-        }).start();
-
-        return hProxy.getResponseStatus();
     }
 
 
@@ -97,67 +99,10 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        switch (requestCode) {
-            case REQUEST_READ_PHONE_STATE: {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
-                    // permission was granted, yay! Do the
-                    // contacts-related task you need to do.
-
-
-                } else {
-                        Toast.makeText(this,"사용자 요청에 의해 중단되었습니다.",Toast.LENGTH_SHORT).show();
-                    // permission denied, boo! Disable the
-                    // functionality that depends on this permission.
-                }
-                return;
-            }
-
-            // other 'case' lines to check for other
-            // permissions this app might request
-        }
-    }
-
-    public void checkAndGetPermission(){
-        // Assume thisActivity is the current activity
-        int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE);
-
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.READ_PHONE_STATE)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            // Should we show an explanation?
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.READ_PHONE_STATE)) {
-
-                // Show an expanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
-
-            } else {
-
-                // No explanation needed, we can request the permission.
-
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.READ_PHONE_STATE},
-                        REQUEST_READ_PHONE_STATE);
-
-                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
-                // app-defined int constant. The callback method gets the
-                // result of the request.
-            }
-        }
-    }
-
-    @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.bt_submit:
 
-                checkAndGetPermission();
                 Intent i = new Intent(this, MainActivity.class);
 
                 editSN = (EditText) findViewById(R.id.et_sn);
@@ -178,25 +123,78 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                 String serviceName = Context.TELEPHONY_SERVICE;
                 TelephonyManager m_telephonyManager = (TelephonyManager) getSystemService(serviceName);
                 //String device_id = m_telephonyManager.getDeviceId();
-                String device_id = "deviceid"+Math.random()*100;
+                String device_id = "deviceid" + Math.random() * 100;
 
-                udi = new UserDeviceInfo(sn,name,mil_class,unit_name,rank,manft,model,device_id,os,os_version);
+                udi = new UserDeviceInfo(sn, name, mil_class, unit_name, rank, manft, model, device_id, os, os_version);
 
 
                 if (udi != null) {
-                    int result = sendInfo();
-                    if(result < 300 && result >= 200 ){
+                    sendInfo(udi);
+                    if (isRequestSuccess) {
                         startActivity(i);
-                    }else{
+                    } else {
                         Toast.makeText(this, "네트워크 문제로 등록에 실패하였습니다.", Toast.LENGTH_SHORT).show();
                         break;
                     }
                 } else {
                     Toast.makeText(this, "일시적 오류입니다. 잠시 후 다시 시도해 주십시오.", Toast.LENGTH_SHORT).show();
                 }
-
-
         }
+    }
+
+    private void sendInfo(UserDeviceInfo udi) {
+       /* hProxy = new HttpProxy("https://osam2017-server-kelvin37.c9users.io/registerUser");
+        new Thread(new Runnable() {
+            public void run() {
+                String[] result = hProxy.postData(udi);
+                //responseCode = Integer.valueOf(result[0]);
+                Log.i("result", result[1]);
+                int resposnseCode = Integer.valueOf(result[0]);
+
+                if (200 <= resposnseCode && resposnseCode < 300) {
+                    isRequestSuccess = true;
+                } else {
+                    isRequestSuccess = false;
+                }
+            }
+        }).start();
+
+        return hProxy.getResponseStatus();*/
+        try {
+
+            RequestParams params = new RequestParams();
+            ObjectMapper om = new ObjectMapper();
+            String jsonEntity;
+            StringEntity entity;
+
+            jsonEntity = om.writeValueAsString(udi);
+            Log.i("jsonEntity",jsonEntity);
+            entity = new StringEntity(jsonEntity);
+            entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
+
+            client.post(this, "http://10.53.128.125:3000/registerUser", entity, "application/json", new AsyncHttpResponseHandler() {
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, byte[] bytes) {
+                    String jsonData = new String(bytes);
+                    Log.i("Test", "jsondata: " + jsonData);
+
+                    if (200 <= statusCode && statusCode < 300) {
+                        isRequestSuccess = true;
+                    } else {
+                        isRequestSuccess = false;
+                    }
+                }
+
+                @Override
+                public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+
+                }
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
     }
 
 

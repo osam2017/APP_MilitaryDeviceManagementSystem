@@ -50,32 +50,17 @@ public class MainActivity extends AppCompatActivity {
         String minimumTime = "8:30:00";
         String limitTime = "17:30:00";
 
-        Calendar nowCal = Calendar.getInstance();
+        DateFormat df = new SimpleDateFormat("HH:mm");
+        String date = df.format(Calendar.getInstance().getTime());
 
-        String[] splitedMinimumTime = minimumTime.split(":");
-        String[] splitedLimitTime = minimumTime.split(":");
+        String[] hourmin = date.split(":");
 
-        Calendar minCal = Calendar.getInstance();
-        minCal.set(Calendar.HOUR_OF_DAY,Integer.parseInt(splitedMinimumTime[0]));
-        minCal.set(Calendar.MINUTE,Integer.parseInt(splitedMinimumTime[1]));
-        minCal.set(Calendar.SECOND,Integer.parseInt(splitedMinimumTime[2]));
+        int minTime = 8 * 60 + 30;
+        int maxTime = 17 * 60 + 30;
 
-        System.out.print(Integer.parseInt(splitedMinimumTime[0]));
+        int nowTime = Integer.valueOf(hourmin[0]) * 60 + Integer.valueOf(hourmin[1]);
+        Log.i("nowTime",hourmin[0]+":"+hourmin[1]);
 
-        Calendar limCal = Calendar.getInstance();
-        limCal.set(Calendar.HOUR_OF_DAY,Integer.parseInt(splitedLimitTime[0]));
-        limCal.set(Calendar.MINUTE,Integer.parseInt(splitedLimitTime[1]));
-        limCal.set(Calendar.SECOND,Integer.parseInt(splitedLimitTime[2]));
-
-        boolean result = false;
-
-        Log.i("minCal",String.valueOf(nowCal.after(minCal)));
-        Log.i("limCal",String.valueOf(nowCal.before(limCal)));
-
-        if(nowCal.after(minCal) && nowCal.before(limCal)){
-            result = true;
-        }
-
-        return result;
+        return nowTime < maxTime && nowTime > minTime ? true:false;
     }
 }

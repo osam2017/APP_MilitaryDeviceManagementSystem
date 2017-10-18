@@ -29,12 +29,15 @@ public class HttpProxy {
         this.requestURL = requestURL;
     }
 
-    public int getResponseStatus(){
+    public int getResponseStatus() {
         return status;
     }
 
-    public String getJSON() {
+    public String[] getJSON() {
+        String responseData = "";
+        String[] result = new String[2];
         try {
+
             URL url = new URL(requestURL);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
@@ -49,7 +52,7 @@ public class HttpProxy {
             conn.setDoInput(true);
             conn.connect();
 
-            int status = conn.getResponseCode();
+            status = conn.getResponseCode();
             Log.i("test", "ProxyResponseCode:" + status);
 
             switch (status) {
@@ -62,17 +65,22 @@ public class HttpProxy {
                         sb.append(line + "\n");
                     }
                     br.close();
-                    return sb.toString();
+                    responseData = sb.toString();
+                    break;
             }
         } catch (Exception e) {
             e.printStackTrace();
             Log.i("test", "NETWORK ERROR:" + e);
         }
-        return null;
+        result[0] = String.valueOf(status);
+        result[1] = responseData;
+
+        return result;
     }
 
-    public String postData(Object obj) {
-        String result = "NO DATA";
+    public String[] postData(Object obj) {
+        String[] result = new String[2];
+        String responseData = "";
         HttpURLConnection conn = null;
         URL url = null;
         try {
@@ -112,11 +120,9 @@ public class HttpProxy {
                     }
                     br.close();
                     //JSONObject responseJSON = new JSONObject(sb.toString());
-                    result = sb.toString();
+                    responseData = sb.toString();
                     break;
             }
-
-
         } catch (MalformedURLException e) {
             e.printStackTrace();
         } catch (ProtocolException e) {
@@ -124,6 +130,10 @@ public class HttpProxy {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        result[0] = String.valueOf(status);
+        result[1] = responseData;
+
         return result;
     }
 
