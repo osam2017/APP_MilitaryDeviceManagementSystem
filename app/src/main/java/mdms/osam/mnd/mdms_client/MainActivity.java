@@ -50,6 +50,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     Button wifiButton;
     Button gpsButton;
     Button cameraButton;
+    Button bluetoothButton;
 
     BroadcastReceiver mReceiver;
     IntentFilter intentfilter;
@@ -134,11 +135,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         wifi = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         wifi.setWifiEnabled(false);
 
-
         //gps 켜져있으면 종료하도록 설정
         requestTurnGPSOff();
 
-        //bluetooth 비활성화
+        //블루투스 비활성화
+        BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        if(mBluetoothAdapter != null){
+            mBluetoothAdapter.disable();
+        }else{
+            Log.e("bluetoorh","disable failed - bluetoothAdapter is null");
+        }
 
     }
 
@@ -161,6 +167,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //에뮬레이터에서는 wifi 활성화 불가능
         wifi = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         wifi.setWifiEnabled(true);
+
+
     }
 
     private boolean isWifiEnabled(){
@@ -231,6 +239,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         boolean bluetoothEnable = false;
 
         BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
         if (mBluetoothAdapter == null) {
             // Device does not support Bluetooth
             bluetoothEnable=false;
@@ -286,9 +295,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         wifiStatus = (TextView)findViewById(R.id.tv_wifi);
         gpsStatus = (TextView)findViewById(R.id.tv_gps);
         bluetoothStatus = (TextView)findViewById(R.id.tv_bluetooth);
+        bluetoothButton = (Button) findViewById(R.id.bt_bluetooth);
+
 
         startWorktime.setOnClickListener(this);
         finishWorktime.setOnClickListener(this);
+        wifiButton.setOnClickListener(this);
+        gpsButton.setOnClickListener(this);
+        cameraButton.setOnClickListener(this);
+        bluetoothButton.setOnClickListener(this);
+
+
+
     }
 
     private void renderStatusView(){
@@ -337,15 +355,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.bt_camera:
                 Intent broadcastCameraIntent = new Intent(Intent.ACTION_CAMERA_BUTTON);
+                broadcastCameraIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                 sendBroadcast(broadcastCameraIntent);
+                Log.e("camera broadcast","success");
                 break;
             case R.id.bt_gps:
                 Intent broadcastGPSIntent = new Intent(LOCATION_SERVICE);
                 sendBroadcast(broadcastGPSIntent);
+                Log.e("gps broadcast","success");
                 break;
             case R.id.bt_wifi:
                 Intent broadcastWifiIntent = new Intent(WIFI_SERVICE);
                 sendBroadcast(broadcastWifiIntent);
+                Log.e("wifi broadcast","success");
+                break;
+            case R.id.bt_bluetooth:
+                Intent broadcastBluetoothIntent = new Intent(BLUETOOTH_SERVICE);
+                sendBroadcast(broadcastBluetoothIntent);
+                Log.e("wifi broadcast","success");
                 break;
 
         }

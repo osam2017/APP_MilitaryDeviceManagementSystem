@@ -19,6 +19,18 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <TextView
+        android:layout_gravity="center"
+        android:text="일과 시작 시 GPS, Wifi, 카메라, Bluetooth 기능 비활성화"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:layout_gravity="center"
+        android:text="일과 종료 시 GPS, Wifi, 카메라, Bluetooth 기능 허용"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
     <LinearLayout
         android:gravity="center"
         android:layout_width="match_parent"
@@ -103,12 +115,28 @@
 
     </LinearLayout>
 
+
+    <LinearLayout
+        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <TextView
+            android:text="아래는 기능 테스트 버튼입니다."
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+
+    </LinearLayout>
+
     <LinearLayout
         android:gravity="center"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="3"
         android:orientation="horizontal">
+
+
 
         <Button
             android:id="@+id/bt_wifi"
@@ -121,6 +149,11 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="GPS" />
+        <Button
+            android:id="@+id/bt_bluetooth"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Bluetooth" />
 
         <Button
             android:id="@+id/bt_camera"

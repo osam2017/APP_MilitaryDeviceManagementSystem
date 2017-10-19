@@ -33,11 +33,89 @@ public class WriteReasonActivity extends AppCompatActivity {
     private final String REG_SN_KEY = "sn";
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
         setContentView(R.layout.activity_write_reason);
+        setIntent(intent);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
 
         Intent receivedIntent = getIntent();
+        final String usedFunc = receivedIntent.getExtras().getString("usedFunction");
+
+        AlertDialog.Builder ad = new AlertDialog.Builder(this).setTitle("사유 작성").setMessage(usedFunc+" 기능을 사용한 사유를 작성하십시오.");
+
+        final EditText et = new EditText(this);
+        ad.setView(et);
+
+        ad.setPositiveButton("작성완료", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int which) {
+                //서버로 사유를 전송함
+                mPref = PreferenceManager.getDefaultSharedPreferences(WriteReasonActivity.this);
+                ReasonVO vo = new ReasonVO();
+                try {
+
+                    String reason = et.getText().toString();
+
+                    RequestParams params = new RequestParams();
+                    ObjectMapper om = new ObjectMapper();
+                    String jsonEntity;
+                    StringEntity entity;
+                    String sn = mPref.getString(REG_SN_KEY,"defaultsn");
+
+                    vo.setSn(sn);
+                    vo.setReason(reason);
+                    vo.setUsed_func(usedFunc);
+
+                    jsonEntity = om.writeValueAsString(vo);
+                    Log.i("jsonEntity", jsonEntity);
+                    entity = new StringEntity(jsonEntity);
+                    entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
+                    client.setTimeout(1000);
+                    client.post(WriteReasonActivity.this, REG_URL, entity, "application/json", new AsyncHttpResponseHandler() {
+                        @Override
+                        public void onSuccess(int statusCode, Header[] headers, byte[] bytes) {
+                            String jsonData = new String(bytes);
+                            Log.i("Test", "responseData: " + jsonData);
+                            Log.i("statusCode", String.valueOf(statusCode));
+                            finish();
+
+                            if (statusCode == 201) {
+                                SharedPreferences.Editor editor = mPref.edit();
+
+                                Toast.makeText(WriteReasonActivity.this, "사유가 작성되었습니다.", Toast.LENGTH_SHORT).show();
+                                finish();
+                            } else {
+
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                            Toast.makeText(WriteReasonActivity.this, "네트워크 문제로 등록에 실패하였습니다.", Toast.LENGTH_SHORT).show();
+                            finish();
+                        }
+                    });
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }).create().show();
+
+
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        //setContentView(R.layout.activity_write_reason);
+
+        /*Intent receivedIntent = getIntent();
         final String usedFunc = receivedIntent.getExtras().getString("action");
 
         AlertDialog.Builder ad = new AlertDialog.Builder(this).setTitle("사유 작성").setMessage(usedFunc+"기능을 사용한 사유를 작성하십시오.");
@@ -100,6 +178,6 @@ public class WriteReasonActivity extends AppCompatActivity {
 
             }
         }).create().show();
-
+*/
     }
 }

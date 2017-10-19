@@ -40,6 +40,10 @@ public class SupervisedService extends Service {
                     startIntent.putExtra("usedFunction","wifi");
                     context.startActivity(startIntent);
                     break;
+                case BLUETOOTH_SERVICE:
+                    startIntent.putExtra("usedFunction","bluetooth");
+                    context.startActivity(startIntent);
+                    break;
 
             }
 
@@ -62,7 +66,7 @@ public class SupervisedService extends Service {
         intentfilter.addAction("com.android.camera.NEW_PICTURE");
         intentfilter.addAction(LOCATION_SERVICE);
         intentfilter.addAction(WIFI_SERVICE);
-
+        intentfilter.addAction(BLUETOOTH_SERVICE);
         registerReceiver(restrictedFunctionReceiver, intentfilter);
 
         //test receiver registered - registered!
