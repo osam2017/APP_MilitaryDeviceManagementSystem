@@ -1,119 +1,295 @@
 package mdms.osam.mnd.mdms_client;
 
-import android.app.AlarmManager;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
+import android.bluetooth.BluetoothAdapter;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.location.LocationManager;
+import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
 
-import mdms.osam.mnd.broadcastReceiver.AlarmBroadcastReceiver;
-import mdms.osam.mnd.helper.HttpRequestHelper;
-import mdms.osam.mnd.service.SupervisedService;
+import static android.bluetooth.BluetoothAdapter.ACTION_STATE_CHANGED;
 
-public class MainActivity extends AppCompatActivity {
-    public class AlarmHelper {
-        private Context context;
-        int[] startTime, endTime;
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
 
-        public AlarmHelper(Context context) {
-            this.context=context;
-            startTime = new int[]{8,30,0};
-            endTime = new int[]{17,30,0};
-        }
-        public void startAlarm() {
-            AlarmManager am = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
-            Intent intent = new Intent(MainActivity.this, AlarmBroadcastReceiver.class);
+    TextView wifiStatus;
+    TextView gpsStatus;
+    TextView bluetoothStatus;
 
-            PendingIntent sender = PendingIntent.getBroadcast(MainActivity.this, 0, intent, 0);
-
-            Calendar calendar = Calendar.getInstance();
-            //알람시간 calendar에 set해주기
-
-            calendar.set(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DATE), startTime[0], startTime[1], startTime[2]);
-
-            //알람 예약
-            am.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), sender);
-        }
-
-        /**
-         * 일과 시작시간과 종료시간을 지정한다. (default : startTime = new int[]{8,30,0}; endTime = new int[]{17,30,0};)
-         * @param startTime
-         * @param endTime
-         */
-        public void setAlarmTime(int[] startTime, int[] endTime){
-
-            if(startTime.length == 3 && endTime.length == 3){
-                this.startTime = startTime;
-                this.endTime = endTime;
-            }
-
-        }
-    }
-
-    TextView isWorkTime;
+    TextView worktimeText;
     SharedPreferences mPref;
     private final String REG_PREF_KEY = "isRegistered";
+    boolean isWorktime = false;
 
-    AlarmHelper ah;
+    Button startWorktime;
+    Button finishWorktime;
+
+    Button wifiButton;
+    Button gpsButton;
+    Button cameraButton;
+
+    BroadcastReceiver mReceiver;
+    IntentFilter intentfilter;
+
+    WifiManager wifi;
+
+    String gpsEnabled;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
 
-        ah = new AlarmHelper(this);
-        ah.setAlarmTime(new int[]{14,57,0},new int[]{14,28,0});
-        ah.startAlarm();
+        checkUserRegister();
 
+        setDefaultView();
+        renderStatusView();
 
+        setWorktimeCondition();
+    }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        renderStatusView();
+        requestTurnGPSOff();
+    }
+
+    /**
+     * 사용자가 등록되었는지 여부를 확인하고, 미등록된 경우
+     */
+    private void checkUserRegister() {
         mPref = PreferenceManager.getDefaultSharedPreferences(this);
 
-        //check isRegistered
         boolean isRegisteredExist = mPref.contains(REG_PREF_KEY);
 
-        if(isRegisteredExist){
-            if(!mPref.getBoolean(REG_PREF_KEY, false)){
+        if (isRegisteredExist) {
+            if (!mPref.getBoolean(REG_PREF_KEY, false)) {
                 Intent i = new Intent(this, RegisterActivity.class);
                 startActivity(i);
             }
-        }else{
+        } else {
             Intent i = new Intent(this, RegisterActivity.class);
             startActivity(i);
-        }
-
-
-
-        isWorkTime = (TextView)findViewById(R.id.tv_isWorkTime);
-        if(isNowInWorkTime()){
-            isWorkTime.setText("일과중입니다.");
-            isWorkTime.setBackgroundColor(Color.parseColor("#00FF00"));
-        }else{
-            isWorkTime.setText("일과가 종료되었습니다.");
-            isWorkTime.setBackgroundColor(Color.parseColor("#e20300"));
         }
     }
 
     /**
-     * 일과시간 여부를 검사한다
-     * @return
+     * 일과중인지 여부를 확인하여 다음과 같은 동작을 수행한다.
+     * 일과중인 경우 상단 상태창에 '일과중입니다.'라고 텍스트를 설정하고, wifi, gps, 카메라 동작을 감지하는 BroadcastReceiver를 등록한다.
+     * 일과가 종료된 경우 상단 상태창에 '일과가 종료되었습니다.'라고 텍스트를 설정하고, wifi, gps, 카메라 동작을 감지하는 BroadcastReceiver를 해지한다.
      */
-    private boolean isNowInWorkTime(){
+    private void setWorktimeCondition() {
+        if (isWorktime) {
+            worktimeText.setText("일과중입니다.");
+            worktimeText.setBackgroundColor(Color.parseColor("#00FF00"));
+            registerSuperviseReceiver();
+            disableFunctions();
+        } else {
+            worktimeText.setText("일과가 종료되었습니다.");
+            worktimeText.setBackgroundColor(Color.parseColor("#e20300"));
+            unregisterSuperviseReceiver();
+            enableFunctions();
+        }
+        renderStatusView();
+    }
+
+    private void disableFunctions() {
+        //wifi 비활성화
+        wifi = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        wifi.setWifiEnabled(false);
+
+        //gps 켜져있으면 종료하도록 설정
+        requestTurnGPSOff();
+
+        //bluetooth 비활성화
+
+    }
+
+    private void requestTurnGPSOff(){
+        //gps 켜져있으면 종료하도록 설정
+        if (isGPSEnabled()) {
+            //gps가 사용가능하면
+            new AlertDialog.Builder(this).setTitle("GPS 설정").setMessage("GPS가 켜져 있습니다. \nGPS를 비활성화 해주십시오.").setPositiveButton("GPS 설정", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int which) {
+                    //GPS 설정 화면을 띄움
+                    Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                    startActivity(intent);
+                }
+            }).create().show();
+    }
+    }
+
+    private void enableFunctions(){
+        //에뮬레이터에서는 wifi 활성화 불가능
+        wifi = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        wifi.setWifiEnabled(true);
+    }
+
+    private boolean chkGpsService() {
+
+        //GPS가 켜져 있는지 확인함.
+        gpsEnabled = android.provider.Settings.Secure.getString(getContentResolver(), Settings.Secure.LOCATION_PROVIDERS_ALLOWED);
+
+        if (!(gpsEnabled.matches(".*gps.*") && gpsEnabled.matches(".*network.*"))) {
+            //gps가 사용가능한 상태가 아니면
+            new AlertDialog.Builder(this).setTitle("GPS 설정").setMessage("GPS가 꺼져 있습니다. \nGPS를 활성화 하시겠습니까?").setPositiveButton("GPS 켜기", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int which) {
+                    //GPS 설정 화면을 띄움
+                    Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                    startActivity(intent);
+                }
+            }).setNegativeButton("닫기", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+
+                }
+            }).create().show();
+
+        }
+        return false;
+    }
+
+    private  boolean isGPSEnabled(){
+        boolean gpsEnable = false;
+        LocationManager manager = (LocationManager)this.getSystemService(Context.LOCATION_SERVICE);
+        if(manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            gpsEnable = true;
+        }
+        return gpsEnable;
+
+    }
+
+    public static boolean isLocationEnabled(Context context) {
+        int locationMode = 0;
+        String locationProviders;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT){
+            try {
+                locationMode = Settings.Secure.getInt(context.getContentResolver(), Settings.Secure.LOCATION_MODE);
+
+            } catch (Settings.SettingNotFoundException e) {
+                e.printStackTrace();
+                return false;
+            }
+
+            return locationMode != Settings.Secure.LOCATION_MODE_OFF;
+
+        }else{
+            locationProviders = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.LOCATION_PROVIDERS_ALLOWED);
+            return !TextUtils.isEmpty(locationProviders);
+        }
+
+
+    }
+
+    private boolean isBluetoothEnabled(){
+
+        boolean bluetoothEnable = false;
+
+        BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (mBluetoothAdapter == null) {
+            // Device does not support Bluetooth
+            bluetoothEnable=false;
+        } else {
+            if (!mBluetoothAdapter.isEnabled()) {
+                // Bluetooth is not enable :)
+                bluetoothEnable=true;
+            }
+        }
+        return bluetoothEnable;
+    }
+
+    /**
+     * wifi, gps, 카메라 동작을 감지하는 BroadcastReceiver를 등록한다.
+     */
+    private void registerSuperviseReceiver() {
+        intentfilter = new IntentFilter();
+        //receive 할 action들을 지정
+        intentfilter.addAction(ACTION_STATE_CHANGED);
+
+        mReceiver = new BroadcastReceiver() {
+
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Toast.makeText(getApplicationContext(), "리시버에 변동이 감지됨", Toast.LENGTH_SHORT).show();
+                String sendString = intent.getAction();;
+                Log.d("TAG", sendString);
+            }
+        };
+
+        Toast.makeText(getApplicationContext(), "Wifi, GPS, 카메라 기능이 제한됩니다.", Toast.LENGTH_SHORT).show();
+        registerReceiver(mReceiver, intentfilter);
+
+    }
+
+    /**
+     * wifi, gps, 카메라 동작을 감지하는 BroadcastReceiver를 해지한다.
+     */
+    private void unregisterSuperviseReceiver() {
+        if (mReceiver != null) {
+            unregisterReceiver(mReceiver);
+            Toast.makeText(getApplicationContext(), "Wifi, GPS, 카메라 사용이 가능합니다.", Toast.LENGTH_SHORT).show();
+            mReceiver = null;
+        }
+    }
+
+    /**
+     * 액티비티 레이아웃 설정
+     */
+    private void setDefaultView() {
+        setContentView(R.layout.activity_main);
+
+        worktimeText = (TextView) findViewById(R.id.tv_isWorkTime);
+        startWorktime = (Button) findViewById(R.id.bt_startWorktime);
+        finishWorktime = (Button) findViewById(R.id.bt_finishWorktime);
+        wifiButton = (Button) findViewById(R.id.bt_wifi);
+        gpsButton = (Button) findViewById(R.id.bt_gps);
+        cameraButton = (Button) findViewById(R.id.bt_camera);
+        wifiStatus = (TextView)findViewById(R.id.tv_wifi);
+        gpsStatus = (TextView)findViewById(R.id.tv_gps);
+        bluetoothStatus = (TextView)findViewById(R.id.tv_bluetooth);
+
+        startWorktime.setOnClickListener(this);
+        finishWorktime.setOnClickListener(this);
+    }
+
+    private void renderStatusView(){
+
+        wifiStatus.setText(isGPSEnabled()?"On":"Off");
+        gpsStatus.setText(isLocationEnabled(MainActivity.this)?"On":"Off");
+        bluetoothStatus.setText(isBluetoothEnabled()?"On":"Off");
+
+    }
+
+    /**
+     * 일과시간 여부(08:30~17:30)를 검사한다.
+     * 실제 어플리케이션 릴리즈 시 사용될 예정
+     *
+     * @return isWorktime
+     */
+    private boolean isNowInWorkTime() {
 
         DateFormat df = new SimpleDateFormat("HH:mm");
         String date = df.format(Calendar.getInstance().getTime());
@@ -124,8 +300,25 @@ public class MainActivity extends AppCompatActivity {
         int maxTime = 17 * 60 + 30;
 
         int nowTime = Integer.valueOf(hourmin[0]) * 60 + Integer.valueOf(hourmin[1]);
-        Log.i("nowTime",hourmin[0]+":"+hourmin[1]);
+        Log.i("nowTime", hourmin[0] + ":" + hourmin[1]);
 
-        return nowTime < maxTime && nowTime > minTime ? true:false;
+        return nowTime <= maxTime && nowTime >= minTime;
+    }
+
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.bt_startWorktime:
+                isWorktime = true;
+                Toast.makeText(this, "일과가 시작되었습니다. ", Toast.LENGTH_SHORT).show();
+                setWorktimeCondition();
+                break;
+            case R.id.bt_finishWorktime:
+                isWorktime = false;
+                Toast.makeText(this, "일과가 종료되었습니다.", Toast.LENGTH_SHORT).show();
+                setWorktimeCondition();
+                break;
+        }
     }
 }

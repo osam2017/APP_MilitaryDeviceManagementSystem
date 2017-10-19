@@ -1,15 +1,12 @@
 package mdms.osam.mnd.mdms_client;
 
-import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
+
 import android.os.Build;
 import android.preference.PreferenceManager;
-import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
+
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.telephony.TelephonyManager;
@@ -28,13 +25,11 @@ import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 
 import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.entity.StringEntity;
 import cz.msebera.android.httpclient.message.BasicHeader;
 import cz.msebera.android.httpclient.protocol.HTTP;
-import mdms.osam.mnd.proxy.HttpProxy;
 import mdms.osam.mnd.vo.UserDeviceInfo;
 
 public class RegisterActivity extends AppCompatActivity implements View.OnClickListener {
@@ -66,7 +61,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
         setContentView(R.layout.activity_register);
         setView();
 
-       mPref = PreferenceManager.getDefaultSharedPreferences(this);
+        mPref = PreferenceManager.getDefaultSharedPreferences(this);
 
     }
 
@@ -163,7 +158,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 
                     if (statusCode == 201) {
                         SharedPreferences.Editor editor = mPref.edit();
-                        editor.putBoolean(REG_PREF_KEY,true);
+                        editor.putBoolean(REG_PREF_KEY, true);
                         editor.commit();
                         Toast.makeText(RegisterActivity.this, "등록에 성공하였습니다.", Toast.LENGTH_SHORT).show();
                         finish();
@@ -175,7 +170,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                 public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                     Toast.makeText(RegisterActivity.this, "네트워크 문제로 등록에 실패하였습니다.", Toast.LENGTH_SHORT).show();
                     SharedPreferences.Editor editor = mPref.edit();
-                    editor.putBoolean(REG_PREF_KEY,false);
+                    editor.putBoolean(REG_PREF_KEY, false);
                     editor.commit();
                 }
             });

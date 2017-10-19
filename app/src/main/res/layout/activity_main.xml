@@ -20,10 +20,121 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <LinearLayout
+        android:gravity="center"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:orientation="vertical"
-        android:layout_weight="5">
+        android:orientation="horizontal"
+        android:layout_weight="2">
+
+        <Button
+            android:layout_gravity="center"
+            android:id="@+id/bt_startWorktime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="일과시작"/>
+
+        <Button
+            android:layout_gravity="center"
+            android:id="@+id/bt_finishWorktime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="일과종료"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="3"
+        android:orientation="vertical">
+        <LinearLayout
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Wifi status : " />
+
+            <TextView
+                android:id="@+id/tv_wifi"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="GPS status : " />
+
+            <TextView
+                android:id="@+id/tv_gps"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Bluetooth status : " />
+
+            <TextView
+                android:id="@+id/tv_bluetooth"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+
+
+
+
+
+
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="3"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/bt_wifi"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Wifi" />
+
+        <Button
+            android:id="@+id/bt_gps"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="GPS" />
+
+        <Button
+            android:id="@+id/bt_camera"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Camera" />
+
 
     </LinearLayout>
 
