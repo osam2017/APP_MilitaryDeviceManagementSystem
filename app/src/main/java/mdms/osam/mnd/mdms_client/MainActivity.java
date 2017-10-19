@@ -1,5 +1,6 @@
 package mdms.osam.mnd.mdms_client;
 
+import android.app.ActivityManager;
 import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -26,6 +27,8 @@ import android.widget.Toast;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+
+import mdms.osam.mnd.service.SupervisedService;
 
 import static android.bluetooth.BluetoothAdapter.ACTION_STATE_CHANGED;
 
@@ -64,7 +67,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setDefaultView();
         renderStatusView();
 
-        setWorktimeCondition();
+        if (isMyServiceRunning(SupervisedService.class)) {
+            worktimeText.setText("일과중입니다.");
+            worktimeText.setBackgroundColor(Color.parseColor("#00FF00"));
+            isWorktime = true;
+            registerSuperviseReceiver();
+            disableFunctions();
+        } else {
+            worktimeText.setText("일과가 종료되었습니다.");
+            worktimeText.setBackgroundColor(Color.parseColor("#e20300"));
+            isWorktime = false;
+            enableFunctions();
+        }
+        renderStatusView();
+
+        //setWorktimeCondition();
     }
 
     @Override
@@ -225,34 +242,57 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      * wifi, gps, 카메라 동작을 감지하는 BroadcastReceiver를 등록한다.
      */
     private void registerSuperviseReceiver() {
-        intentfilter = new IntentFilter();
+        /*intentfilter = new IntentFilter();
         //receive 할 action들을 지정
         intentfilter.addAction(ACTION_STATE_CHANGED);
+        intentfilter.addAction((Intent.ACTION_CAMERA_BUTTON));
 
         mReceiver = new BroadcastReceiver() {
 
             @Override
             public void onReceive(Context context, Intent intent) {
                 Toast.makeText(getApplicationContext(), "리시버에 변동이 감지됨", Toast.LENGTH_SHORT).show();
-                String sendString = intent.getAction();;
-                Log.d("TAG", sendString);
+                String action = intent.getAction();
+                Log.d("action", action);
+                Intent startIntent = new Intent(MainActivity.this, WriteReasonActivity.class);
+                switch (action){
+                    case Intent.ACTION_CAMERA_BUTTON:
+                        startIntent.putExtra("action","camera");
+                        startActivity(startIntent);
+
+                }
+
             }
         };
 
         Toast.makeText(getApplicationContext(), "Wifi, GPS, 카메라 기능이 제한됩니다.", Toast.LENGTH_SHORT).show();
-        registerReceiver(mReceiver, intentfilter);
+        registerReceiver(mReceiver, intentfilter);*/
+        Intent lintent = new Intent(this, SupervisedService.class);
+        startService(lintent);
 
+    }
+
+    private boolean isMyServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
      * wifi, gps, 카메라 동작을 감지하는 BroadcastReceiver를 해지한다.
      */
     private void unregisterSuperviseReceiver() {
-        if (mReceiver != null) {
+        /*if (mReceiver != null) {
             unregisterReceiver(mReceiver);
             Toast.makeText(getApplicationContext(), "Wifi, GPS, 카메라 사용이 가능합니다.", Toast.LENGTH_SHORT).show();
             mReceiver = null;
-        }
+        }*/
+        Intent lintent = new Intent(this, SupervisedService.class);
+        this.stopService(lintent);
     }
 
     /**
@@ -319,6 +359,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 Toast.makeText(this, "일과가 종료되었습니다.", Toast.LENGTH_SHORT).show();
                 setWorktimeCondition();
                 break;
+            case R.id.bt_camera:
+                Intent broadcastCameraIntent = new Intent(Intent.ACTION_CAMERA_BUTTON);
+                sendBroadcast(broadcastCameraIntent);
+                break;
+
         }
     }
 }

@@ -9,8 +9,13 @@ import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
+import mdms.osam.mnd.mdms_client.MainActivity;
+import mdms.osam.mnd.mdms_client.WriteReasonActivity;
+
+import static android.bluetooth.BluetoothAdapter.ACTION_STATE_CHANGED;
+
 public class SupervisedService extends Service {
-    private static BroadcastReceiver restrictedFunctionReceiver;
+    public static BroadcastReceiver restrictedFunctionReceiver;
 
     @Override
     public IBinder onBind(Intent arg0)
@@ -42,23 +47,29 @@ public class SupervisedService extends Service {
             public void onReceive(Context context, Intent intent)
             {
                 Log.d("SupervisedService", "Restricted Function Detected");
-                // do something, e.g. send Intent to main app
-                /*
-                switch(intent.getAction()){
+
+                Toast.makeText(getApplicationContext(), "리시버에 변동이 감지됨", Toast.LENGTH_SHORT).show();
+                String action = intent.getAction();
+                Log.d("action Occured", action);
+                Intent startIntent = new Intent(getApplicationContext(), WriteReasonActivity.class);
+                switch (action){
+                    case Intent.ACTION_CAMERA_BUTTON:
+                    case "com.android.camera.NEW_PICTURE":
+                        startIntent.putExtra("action","camera");
+                        startActivity(startIntent);
+                        break;
 
                 }
 
-                 */
-
-                //Intent i = new Intent(context, WriteReasonActivity.class);
-                //startActivity(i);
             }
         };
 
+        IntentFilter intentfilter = new IntentFilter();
+        //receive 할 action들을 지정
+        intentfilter.addAction(ACTION_STATE_CHANGED);
+        intentfilter.addAction((Intent.ACTION_CAMERA_BUTTON));
+        intentfilter.addAction("com.android.camera.NEW_PICTURE");
 
-        IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
-
-
-        registerReceiver(restrictedFunctionReceiver, filter);
+        registerReceiver(restrictedFunctionReceiver, intentfilter);
     }
 }

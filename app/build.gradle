@@ -28,6 +28,6 @@ dependencies {
     compile 'com.android.support:appcompat-v7:26.+'
     compile 'com.android.support.constraint:constraint-layout:1.0.0-alpha7'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.0.1'
-    testCompile 'junit:junit:4.12'
     compile 'com.loopj.android:android-async-http:1.4.9'
+    testCompile 'junit:junit:4.12'
 }
