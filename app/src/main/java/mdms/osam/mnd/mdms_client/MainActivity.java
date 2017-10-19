@@ -79,7 +79,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             isWorktime = false;
             enableFunctions();
         }
-        renderStatusView();
+
 
         //setWorktimeCondition();
     }
@@ -88,7 +88,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onResume() {
         super.onResume();
         renderStatusView();
-        requestTurnGPSOff();
     }
 
     /**
@@ -135,6 +134,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         wifi = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         wifi.setWifiEnabled(false);
 
+
         //gps 켜져있으면 종료하도록 설정
         requestTurnGPSOff();
 
@@ -161,6 +161,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //에뮬레이터에서는 wifi 활성화 불가능
         wifi = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         wifi.setWifiEnabled(true);
+    }
+
+    private boolean isWifiEnabled(){
+        wifi = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        return wifi.isWifiEnabled();
     }
 
     private boolean chkGpsService() {
@@ -242,31 +247,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      * wifi, gps, 카메라 동작을 감지하는 BroadcastReceiver를 등록한다.
      */
     private void registerSuperviseReceiver() {
-        /*intentfilter = new IntentFilter();
-        //receive 할 action들을 지정
-        intentfilter.addAction(ACTION_STATE_CHANGED);
-        intentfilter.addAction((Intent.ACTION_CAMERA_BUTTON));
-
-        mReceiver = new BroadcastReceiver() {
-
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                Toast.makeText(getApplicationContext(), "리시버에 변동이 감지됨", Toast.LENGTH_SHORT).show();
-                String action = intent.getAction();
-                Log.d("action", action);
-                Intent startIntent = new Intent(MainActivity.this, WriteReasonActivity.class);
-                switch (action){
-                    case Intent.ACTION_CAMERA_BUTTON:
-                        startIntent.putExtra("action","camera");
-                        startActivity(startIntent);
-
-                }
-
-            }
-        };
-
         Toast.makeText(getApplicationContext(), "Wifi, GPS, 카메라 기능이 제한됩니다.", Toast.LENGTH_SHORT).show();
-        registerReceiver(mReceiver, intentfilter);*/
         Intent lintent = new Intent(this, SupervisedService.class);
         startService(lintent);
 
@@ -286,11 +267,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      * wifi, gps, 카메라 동작을 감지하는 BroadcastReceiver를 해지한다.
      */
     private void unregisterSuperviseReceiver() {
-        /*if (mReceiver != null) {
-            unregisterReceiver(mReceiver);
-            Toast.makeText(getApplicationContext(), "Wifi, GPS, 카메라 사용이 가능합니다.", Toast.LENGTH_SHORT).show();
-            mReceiver = null;
-        }*/
         Intent lintent = new Intent(this, SupervisedService.class);
         this.stopService(lintent);
     }
@@ -317,7 +293,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void renderStatusView(){
 
-        wifiStatus.setText(isGPSEnabled()?"On":"Off");
+        wifiStatus.setText(isWifiEnabled()?"On":"Off");
         gpsStatus.setText(isLocationEnabled(MainActivity.this)?"On":"Off");
         bluetoothStatus.setText(isBluetoothEnabled()?"On":"Off");
 
@@ -362,6 +338,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.bt_camera:
                 Intent broadcastCameraIntent = new Intent(Intent.ACTION_CAMERA_BUTTON);
                 sendBroadcast(broadcastCameraIntent);
+                break;
+            case R.id.bt_gps:
+                Intent broadcastGPSIntent = new Intent(LOCATION_SERVICE);
+                sendBroadcast(broadcastGPSIntent);
+                break;
+            case R.id.bt_wifi:
+                Intent broadcastWifiIntent = new Intent(WIFI_SERVICE);
+                sendBroadcast(broadcastWifiIntent);
                 break;
 
         }

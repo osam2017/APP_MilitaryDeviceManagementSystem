@@ -51,6 +51,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 
     private final String REG_PREF_KEY = "isRegistered";
     private final String REG_URL = "http://10.53.128.125:3000/registerUser";
+    private final String REG_SN_KEY = "sn";
     private final int RESPONSE_CODE = 3;
 
     private static AsyncHttpClient client = new AsyncHttpClient();
@@ -143,6 +144,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
             ObjectMapper om = new ObjectMapper();
             String jsonEntity;
             StringEntity entity;
+            final String sn = udi.getSn();
 
             jsonEntity = om.writeValueAsString(udi);
             Log.i("jsonEntity", jsonEntity);
@@ -159,6 +161,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                     if (statusCode == 201) {
                         SharedPreferences.Editor editor = mPref.edit();
                         editor.putBoolean(REG_PREF_KEY, true);
+                        editor.putString(REG_SN_KEY,sn);
                         editor.commit();
                         Toast.makeText(RegisterActivity.this, "등록에 성공하였습니다.", Toast.LENGTH_SHORT).show();
                         finish();
