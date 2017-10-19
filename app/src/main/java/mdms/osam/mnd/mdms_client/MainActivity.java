@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         ah = new AlarmHelper(this);
-        ah.setAlarmTime(new int[]{13,31,0},new int[]{14,28,0});
+        ah.setAlarmTime(new int[]{14,57,0},new int[]{14,28,0});
         ah.startAlarm();
 
 

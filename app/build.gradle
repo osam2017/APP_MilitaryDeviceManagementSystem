@@ -2,12 +2,12 @@ apply plugin: 'com.android.application'
 
 android {
     useLibrary 'org.apache.http.legacy'
-    compileSdkVersion 26
+    compileSdkVersion 25
     buildToolsVersion "26.0.2"
     defaultConfig {
         applicationId "mdms.osam.mnd.mdms_client"
         minSdkVersion 21
-        targetSdkVersion 26
+        targetSdkVersion 25
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
