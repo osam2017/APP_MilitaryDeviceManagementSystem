@@ -55,28 +55,18 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
     SharedPreferences mPref;
 
     private final String REG_PREF_KEY = "isRegistered";
+    private final String REG_URL = "http://10.53.128.125:3000/registerUser";
+    private final int RESPONSE_CODE = 3;
 
     private static AsyncHttpClient client = new AsyncHttpClient();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_register);
+        setView();
 
-        mPref = PreferenceManager.getDefaultSharedPreferences(this);
-
-        //check isRegistered
-        boolean isRegisteredExist = mPref.contains(REG_PREF_KEY);
-
-        if(isRegisteredExist){
-            if(mPref.getBoolean(REG_PREF_KEY, false)){
-                Intent i = new Intent(this, MainActivity.class);
-                startActivity(i);
-            }
-        }else{
-            setContentView(R.layout.activity_register);
-            setView();
-
-        }
+       mPref = PreferenceManager.getDefaultSharedPreferences(this);
 
     }
 
@@ -164,7 +154,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
             entity = new StringEntity(jsonEntity);
             entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
 
-            client.post(this, "http://10.53.128.125:3000/registerUser", entity, "application/json", new AsyncHttpResponseHandler() {
+            client.post(this, REG_URL, entity, "application/json", new AsyncHttpResponseHandler() {
                 @Override
                 public void onSuccess(int statusCode, Header[] headers, byte[] bytes) {
                     String jsonData = new String(bytes);
@@ -176,9 +166,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                         editor.putBoolean(REG_PREF_KEY,true);
                         editor.commit();
                         Toast.makeText(RegisterActivity.this, "등록에 성공하였습니다.", Toast.LENGTH_SHORT).show();
-
-                        Intent i = new Intent(RegisterActivity.this, MainActivity.class);
-                        startActivity(i);
+                        finish();
                     } else {
                     }
                 }

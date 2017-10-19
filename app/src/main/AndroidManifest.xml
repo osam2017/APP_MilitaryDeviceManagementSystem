@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="mdms.osam.mnd.mdms_client">
+
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.Manifest.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.VIBRATE"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+
 
     <application
         android:allowBackup="true"
@@ -15,12 +19,19 @@
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".RegisterActivity">
+        <activity android:name=".RegisterActivity" android:label="@string/reg_activity_name">
 
         </activity>
+
+        <service
+            android:name="mdms.osam.mnd.service.SupervisedService"
+            android:enabled="true"
+            android:exported="true"></service>
+        <receiver android:name="mdms.osam.mnd.broadcastReceiver.AlarmBroadcastReceiver"></receiver>
     </application>
 
 </manifest>

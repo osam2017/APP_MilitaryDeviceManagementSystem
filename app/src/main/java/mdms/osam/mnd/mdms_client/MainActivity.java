@@ -1,5 +1,9 @@
 package mdms.osam.mnd.mdms_client;
 
+import android.app.AlarmManager;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
@@ -13,23 +17,70 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 
+import mdms.osam.mnd.broadcastReceiver.AlarmBroadcastReceiver;
 import mdms.osam.mnd.helper.HttpRequestHelper;
+import mdms.osam.mnd.service.SupervisedService;
 
 public class MainActivity extends AppCompatActivity {
+    public class AlarmHelper {
+        private Context context;
+        int[] startTime, endTime;
 
 
-    private final String URL = "10.53.128.126:3000/log";
-    HttpRequestHelper httpHelper;
+        public AlarmHelper(Context context) {
+            this.context=context;
+            startTime = new int[]{8,30,0};
+            endTime = new int[]{17,30,0};
+        }
+        public void startAlarm() {
+            AlarmManager am = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
+            Intent intent = new Intent(MainActivity.this, AlarmBroadcastReceiver.class);
+
+            PendingIntent sender = PendingIntent.getBroadcast(MainActivity.this, 0, intent, 0);
+
+            Calendar calendar = Calendar.getInstance();
+            //알람시간 calendar에 set해주기
+
+            calendar.set(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DATE), startTime[0], startTime[1], startTime[2]);
+
+            //알람 예약
+            am.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), sender);
+        }
+
+        /**
+         * 일과 시작시간과 종료시간을 지정한다. (default : startTime = new int[]{8,30,0}; endTime = new int[]{17,30,0};)
+         * @param startTime
+         * @param endTime
+         */
+        public void setAlarmTime(int[] startTime, int[] endTime){
+
+            if(startTime.length == 3 && endTime.length == 3){
+                this.startTime = startTime;
+                this.endTime = endTime;
+            }
+
+        }
+    }
+
     TextView isWorkTime;
     SharedPreferences mPref;
     private final String REG_PREF_KEY = "isRegistered";
+
+    AlarmHelper ah;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        ah = new AlarmHelper(this);
+        ah.setAlarmTime(new int[]{13,31,0},new int[]{14,28,0});
+        ah.startAlarm();
+
+
 
         mPref = PreferenceManager.getDefaultSharedPreferences(this);
 
@@ -46,13 +97,15 @@ public class MainActivity extends AppCompatActivity {
             startActivity(i);
         }
 
+
+
         isWorkTime = (TextView)findViewById(R.id.tv_isWorkTime);
         if(isNowInWorkTime()){
             isWorkTime.setText("일과중입니다.");
-            isWorkTime.setBackgroundColor(0x00FF00);
+            isWorkTime.setBackgroundColor(Color.parseColor("#00FF00"));
         }else{
             isWorkTime.setText("일과가 종료되었습니다.");
-            isWorkTime.setBackgroundColor(0xe20300);
+            isWorkTime.setBackgroundColor(Color.parseColor("#e20300"));
         }
     }
 
@@ -61,9 +114,6 @@ public class MainActivity extends AppCompatActivity {
      * @return
      */
     private boolean isNowInWorkTime(){
-
-        String minimumTime = "8:30:00";
-        String limitTime = "17:30:00";
 
         DateFormat df = new SimpleDateFormat("HH:mm");
         String date = df.format(Calendar.getInstance().getTime());
