@@ -1,12 +1,14 @@
 package mdms.osam.mnd.mdms_client;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 
 import android.os.Build;
 import android.preference.PreferenceManager;
 
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.telephony.TelephonyManager;
@@ -151,6 +153,8 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
             entity = new StringEntity(jsonEntity);
             entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
 
+            client.setTimeout(1000);
+
             client.post(this, REG_URL, entity, "application/json", new AsyncHttpResponseHandler() {
                 @Override
                 public void onSuccess(int statusCode, Header[] headers, byte[] bytes) {
@@ -172,9 +176,29 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                 @Override
                 public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                     Toast.makeText(RegisterActivity.this, "네트워크 문제로 등록에 실패하였습니다.", Toast.LENGTH_SHORT).show();
-                    SharedPreferences.Editor editor = mPref.edit();
-                    editor.putBoolean(REG_PREF_KEY, false);
-                    editor.commit();
+                    AlertDialog.Builder ad = new AlertDialog.Builder(RegisterActivity.this).setTitle("네트워크 문제 발생").setMessage("메인 화면으로 이동하시겠습니까?\n(단 재등록을 하기 위해서는 어플리케이션을 삭제 후 재설치 하셔야 합니다.)");
+
+                    ad.setPositiveButton("예", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            SharedPreferences.Editor editor = mPref.edit();
+                            editor.putBoolean(REG_PREF_KEY, true);
+                            editor.commit();
+                            Intent i = new Intent(RegisterActivity.this, MainActivity.class);
+                            startActivity(i);
+                        }
+                    });
+
+                    ad.setNegativeButton("아니요", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            SharedPreferences.Editor editor = mPref.edit();
+                            editor.putBoolean(REG_PREF_KEY, false);
+                            editor.commit();
+                        }
+                    });
+                    ad.create().show();
+
                 }
             });
         } catch (IOException e) {
